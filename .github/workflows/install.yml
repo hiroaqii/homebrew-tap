@@ -1,0 +1,72 @@
+name: Install
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    name: Install (${{ matrix.os }})
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      MISE_DATA_DIR: ${{ runner.temp }}/mise
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # This action checks out the tested commit and registers it as hiroaqii/tap.
+      - uses: Homebrew/actions/setup-homebrew@e99025eb970cfa124b8284a35463d87426917478
+        with:
+          stable: true
+
+      - name: Install with Homebrew
+        run: |
+          brew install hiroaqii/tap/gitframe
+          brew test hiroaqii/tap/gitframe
+          binary="$(brew --prefix gitframe)/bin/gitframe"
+          "$binary" --version
+          brew list --versions gitframe > "$RUNNER_TEMP/gitframe-version"
+
+      - uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3
+        with:
+          install: false
+          cache: false
+
+      - name: Install with mise
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          version="$(awk '{print $2}' "$RUNNER_TEMP/gitframe-version")"
+          tool="github:hiroaqii/gitframe@$version"
+          mise use -g "$tool"
+          binary="$(mise which gitframe)"
+          case "$binary" in
+            "$MISE_DATA_DIR"/installs/*/gitframe) ;;
+            *) echo "Unexpected mise executable: $binary" >&2; exit 1 ;;
+          esac
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            attributes="$(/usr/bin/xattr "$binary")"
+            if printf '%s\n' "$attributes" | grep -qx 'com.apple.quarantine'; then
+              echo "mise installed a quarantined executable" >&2
+              exit 1
+            fi
+            echo "No quarantine attribute on the mise executable"
+          fi
+          test "$("$binary" --version)" = "gitframe $version"
+          "$binary" --help

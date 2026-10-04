@@ -1,12 +1,12 @@
 class Gitframe < Formula
   desc "Terminal workspace for reviewing Git changes, source, and history"
   homepage "https://github.com/hiroaqii/gitframe"
-  version "0.1.2"
+  version "0.1.3"
   license "MIT"
 
   on_macos do
     url "https://github.com/hiroaqii/gitframe/releases/download/v#{version}/gitframe-v#{version}-macos-arm64.tar.gz"
-    sha256 "b2938c99d7d250cf6906da8b1354adc348e6ad3e5622751b9226f7b3421ed525"
+    sha256 "b888d25e0fd2c912e29236aa470a1c0bf3f1a39b78104f4a1e3c1c8ecd4ae023"
 
     depends_on arch: :arm64
     depends_on macos: :sequoia
@@ -14,7 +14,7 @@ class Gitframe < Formula
 
   on_linux do
     url "https://github.com/hiroaqii/gitframe/releases/download/v#{version}/gitframe-v#{version}-linux-x86_64.tar.gz"
-    sha256 "42279054f86be9f8fd2d5e51db94c5031b8304f0627a6f92da20ff44d1d41baf"
+    sha256 "ea0f263749d5de47c1c7d539eee88db82a5c783ec77ed776681ae3db701a104d"
 
     depends_on arch: :x86_64
   end
